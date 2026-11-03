@@ -13,7 +13,7 @@ require_once __DIR__ . '/../routes/web.php';
 
 $response = $router->dispatch(
     $_SERVER['REQUEST_METHOD'],
-    parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)
+    $_SERVER['REQUEST_URI']
 );
 
 echo $response;

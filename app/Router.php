@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App;
 
 class Router
@@ -38,22 +40,28 @@ class Router
                 continue;
             }
 
-            $pattern = preg_replace(
-                '#\{([^}]+)\}#',
-                '([^/]+)',
-                $route['path']
-            );
+            // Quote literal text so dots, plus signs and delimiters stay literal.
+            $parts = preg_split('/(\{[A-Za-z_][A-Za-z0-9_]*\})/', $route['path'], -1, PREG_SPLIT_DELIM_CAPTURE);
+            $pattern = '';
+            foreach ($parts as $part) {
+                $pattern .= preg_match('/^\{[A-Za-z_][A-Za-z0-9_]*\}$/', $part)
+                    ? '([^/]+)'
+                    : preg_quote($part, '~');
+            }
 
-            $pattern = '#^' . $pattern . '$#';
-
-            if (preg_match($pattern, $uri, $matches)) {
+            // Split the query before matching; decode parameters only afterward.
+            $path = explode('?', $uri, 2)[0];
+            if (preg_match('~^' . $pattern . '$~D', $path, $matches)) {
 
                 array_shift($matches);
 
-                return call_user_func_array(
-                    $route['handler'],
-                    $matches
-                );
+                $handler = $route['handler'];
+                if (is_array($handler) && is_string($handler[0])) {
+                    $handler = [new $handler[0](), $handler[1]];
+                }
+
+                http_response_code(200);
+                return call_user_func_array($handler, array_map('rawurldecode', $matches));
             }
         }
 
