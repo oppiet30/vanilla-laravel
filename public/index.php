@@ -2,5 +2,15 @@
 
 declare(strict_types=1);
 
-echo '<h1>Welcome to Vanilla Laravel</h1>';
-echo '<p>Our first PHP application is working!</p>';
+require_once __DIR__ . '/../app/Router.php';
+
+use App\Router;
+
+$router = new Router();
+
+require __DIR__ . '/../routes/web.php';
+
+$router->dispatch(
+    $_SERVER['REQUEST_METHOD'] ?? 'GET',
+    $_SERVER['REQUEST_URI'] ?? '/'
+);
