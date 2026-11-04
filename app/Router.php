@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App;
 
+use App\Http\Request;
+use App\Http\Response;
+
 final class Router
 {
     /** @var array<string, array<string, callable|array>> */
@@ -14,25 +17,22 @@ final class Router
         $this->routes['GET'][$path] = $handler;
     }
 
-    public function dispatch(string $method, string $uri): void
+    public function dispatch(Request $request): Response
     {
-        $path = parse_url($uri, PHP_URL_PATH);
-        $path = is_string($path) ? $path : '/';
-
-        $handler = $this->routes[$method][$path] ?? null;
+        $handler = $this->routes[$request->method][$request->path()] ?? null;
 
         if ($handler === null) {
-            http_response_code(404);
-            header('Content-Type: text/plain; charset=UTF-8');
-            echo '404 - Page Not Found';
-            return;
+            return new Response(
+                '404 - Page Not Found',
+                404,
+                ['Content-Type' => 'text/plain; charset=UTF-8'],
+            );
         }
 
         if (is_array($handler) && isset($handler[0], $handler[1]) && is_string($handler[0])) {
             $handler = [new $handler[0](), $handler[1]];
         }
 
-        header('Content-Type: text/html; charset=UTF-8');
-        echo call_user_func($handler);
+        return new Response((string) call_user_func($handler));
     }
 }
