@@ -6,10 +6,10 @@ namespace App;
 
 final class Router
 {
-    /** @var array<string, array<string, callable>> */
+    /** @var array<string, array<string, callable|array>> */
     private array $routes = [];
 
-    public function get(string $path, callable $handler): void
+    public function get(string $path, callable|array $handler): void
     {
         $this->routes['GET'][$path] = $handler;
     }
@@ -28,7 +28,11 @@ final class Router
             return;
         }
 
+        if (is_array($handler) && isset($handler[0], $handler[1]) && is_string($handler[0])) {
+            $handler = [new $handler[0](), $handler[1]];
+        }
+
         header('Content-Type: text/html; charset=UTF-8');
-        echo $handler();
+        echo call_user_func($handler);
     }
 }
