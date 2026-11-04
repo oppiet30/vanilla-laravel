@@ -17,11 +17,35 @@ final class Router
         $this->routes['GET'][$path] = $handler;
     }
 
+    public function post(string $path, callable|array $handler): void
+    {
+        $this->routes['POST'][$path] = $handler;
+    }
+
     public function dispatch(Request $request): Response
     {
-        $handler = $this->routes[$request->method][$request->path()] ?? null;
+        $path = $request->path();
+        $handler = $this->routes[$request->method][$path] ?? null;
 
         if ($handler === null) {
+            $allowed = [];
+            foreach ($this->routes as $method => $paths) {
+                if (isset($paths[$path])) {
+                    $allowed[] = $method;
+                }
+            }
+
+            if ($allowed !== []) {
+                return new Response(
+                    '405 - Method Not Allowed',
+                    405,
+                    [
+                        'Content-Type' => 'text/plain; charset=UTF-8',
+                        'Allow' => implode(', ', $allowed),
+                    ],
+                );
+            }
+
             return new Response(
                 '404 - Page Not Found',
                 404,
@@ -33,6 +57,8 @@ final class Router
             $handler = [new $handler[0](), $handler[1]];
         }
 
-        return new Response((string) call_user_func($handler));
+        $result = call_user_func($handler, $request);
+
+        return $result instanceof Response ? $result : new Response((string) $result);
     }
 }

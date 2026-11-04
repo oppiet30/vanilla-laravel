@@ -6,9 +6,11 @@ namespace App\Http;
 
 final class Request
 {
+    /** @param array<string, mixed> $post */
     public function __construct(
         public readonly string $method,
         public readonly string $uri,
+        private readonly array $post = [],
     ) {
     }
 
@@ -17,6 +19,7 @@ final class Request
         return new self(
             $_SERVER['REQUEST_METHOD'] ?? 'GET',
             $_SERVER['REQUEST_URI'] ?? '/',
+            $_POST,
         );
     }
 
@@ -25,5 +28,12 @@ final class Request
         $path = parse_url($this->uri, PHP_URL_PATH);
 
         return is_string($path) ? $path : '/';
+    }
+
+    public function input(string $key, ?string $default = null): ?string
+    {
+        $value = $this->post[$key] ?? null;
+
+        return is_string($value) ? $value : $default;
     }
 }
