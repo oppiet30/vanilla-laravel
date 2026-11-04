@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\View;
+
 final class HomeController
 {
     public function index(): string
     {
-        return '<h1>Welcome to Vanilla Laravel</h1><p>Our router is working!</p>';
+        return View::render('home', ['title' => 'Welcome to Vanilla Laravel']);
     }
 
     public function about(): string
     {
-        return '<h1>About</h1><p>This application uses vanilla PHP routing.</p>';
+        return View::render('about', ['title' => 'About']);
     }
 }
