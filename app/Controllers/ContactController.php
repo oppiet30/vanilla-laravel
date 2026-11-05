@@ -7,17 +7,24 @@ namespace App\Controllers;
 use App\Http\Request;
 use App\Http\Response;
 use App\View;
+use App\Csrf;
 use App\Session;
 
 final class ContactController
 {
     public function create(): string
     {
-        return View::render('contact', ['title' => 'Contact']);
+        return View::render('contact', ['title' => 'Contact', 'csrfToken' => Csrf::token()]);
     }
 
     public function store(Request $request): Response
     {
+        if (!Csrf::validate($request->input('_token'))) {
+            return new Response(View::render('csrf-error', [
+                'title' => 'Form verification failed',
+            ]), 403);
+        }
+
         $name = trim($request->input('name', '') ?? '');
         $message = trim($request->input('message', '') ?? '');
 
@@ -25,6 +32,7 @@ final class ContactController
             return new Response(
                 View::render('contact', [
                     'title' => 'Contact',
+                    'csrfToken' => Csrf::token(),
                     'error' => 'Name and message are required.',
                     'name' => $name,
                     'message' => $message,
@@ -37,6 +45,7 @@ final class ContactController
             return new Response(
                 View::render('contact', [
                     'title' => 'Contact',
+                    'csrfToken' => Csrf::token(),
                     'error' => 'Name must be at most 100 characters and message at most 2000.',
                     'name' => $name,
                     'message' => $message,

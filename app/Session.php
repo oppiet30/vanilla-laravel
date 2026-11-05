@@ -30,6 +30,18 @@ final class Session
         }
     }
 
+    public static function get(string $key, mixed $default = null): mixed
+    {
+        self::requireActive();
+        return $_SESSION[$key] ?? $default;
+    }
+
+    public static function put(string $key, mixed $value): void
+    {
+        self::requireActive();
+        $_SESSION[$key] = $value;
+    }
+
     public static function flash(string $key, mixed $value): void
     {
         self::requireActive();

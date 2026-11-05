@@ -245,3 +245,45 @@ git log -1 --oneline
 git tag -a v0.13.0 -m "Step 13: Add sessions and one-time flash messages"
 git push origin v0.13.0
 ```
+
+## Step 14 — CSRF protection (v0.14.0)
+
+The contact form now includes a hidden _token field. Csrf::token() creates a random 32-byte token (64 hexadecimal characters) stored in the session. Csrf::validate() checks the submitted value with hash_equals() before any contact validation or flash writes. Missing, malformed, incorrect, or other-session tokens return HTTP 403 with a link to load a fresh form. This check protects POST /contact; other routes keep their existing behavior.
+
+Tokens remain stable for the session so multiple open form tabs work. They are separate from flash data and are not consumed by confirmation. Session expiry requires loading a fresh form. This follows the [OWASP synchronizer-token pattern](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html#synchronizer-token-pattern); comparison uses [PHP hash_equals](https://www.php.net/hash_equals). Tokens belong in the POST body, not the URL.
+
+A valid token plus valid fields still produces the Step 13 303 redirect and one-time confirmation. A valid token plus invalid fields returns 422, retains escaped input, and includes the same token for retry. Earlier bare curl contact POST examples now return 403 unless they include a token fetched with the same session cookie. No dependencies, credentials, or database changes are introduced.
+
+### Verify Step 14
+
+```bash
+git pull --ff-only origin main
+composer dump-autoload
+php tests/middleware.php
+php tests/session.php
+php tests/csrf.php
+php -S 10.1.10.138:8181 -t public public/index.php
+```
+
+Reload /contact to get a fresh form. Submit normally: expect the confirmation redirect. In browser developer tools, remove or change the hidden _token field, then submit: expect 403 and no new confirmation. Reopen the form and submit empty or oversized fields with its valid token: expect 422. Open the form in a private browser session: its token must not work with the original session cookie. Database pages, dynamic routes, and 404/405 responses should still work.
+
+For curl, fetch a form using a cookie jar, then extract and submit the hidden token:
+
+```bash
+cookies=$(mktemp)
+form=$(curl -s -c "$cookies" -b "$cookies" http://10.1.10.138:8181/contact)
+token=$(printf '%s' "$form" | sed -n 's/.*name="_token" value="\([a-f0-9]*\)".*/\1/p')
+curl -i -c "$cookies" -b "$cookies" --data-urlencode "_token=$token" --data-urlencode "name=Oppie" --data-urlencode "message=Hello" http://10.1.10.138:8181/contact
+# 303, Location: /contact/success
+curl -i -b "$cookies" http://10.1.10.138:8181/contact/success
+# 200, one-time confirmation
+rm -f "$cookies"
+```
+
+After verifying the intended Step 14 commit on main:
+
+```bash
+git log -1 --oneline
+git tag -a v0.14.0 -m "Step 14: Add session-backed CSRF form protection"
+git push origin v0.14.0
+```

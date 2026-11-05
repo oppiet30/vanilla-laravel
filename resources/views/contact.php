@@ -4,6 +4,7 @@
     <p role="alert"><?= htmlspecialchars((string) $error, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
 <?php endif; ?>
 <form action="/contact" method="post">
+    <input type="hidden" name="_token" value="<?= htmlspecialchars((string) $csrfToken, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
     <p>
         <label for="name">Name</label>
         <input id="name" name="name" maxlength="100" required value="<?= htmlspecialchars((string) ($name ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">
