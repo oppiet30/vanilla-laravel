@@ -326,3 +326,32 @@ git log -1 --oneline
 git tag -a v0.15.0 -m "Step 15: Extract reusable text-field validation"
 git push origin v0.15.0
 ```
+
+## Step 16 — Errors beside form fields (v0.16.0)
+
+The contact controller now passes Validator's field errors to the view. Invalid fields show their error immediately below the input, with aria-invalid="true" and aria-describedby linking the control to its error message. Only affected fields receive these attributes; a fresh form has none.
+
+The existing summary is retained. Entered values, field messages, and the CSRF token are HTML-escaped. Required and maximum-length rules, trimming, Unicode limits, 403/422 status codes, and the 303 one-time confirmation flow remain unchanged. No routes, schema, credentials, or dependencies change.
+
+### Verify Step 16
+
+```bash
+git pull --ff-only origin main
+composer dump-autoload
+php tests/contact-view.php
+php tests/validator.php
+php tests/middleware.php
+php tests/session.php
+php tests/csrf.php
+php -S 10.1.10.138:8181 -t public public/index.php
+```
+
+Reload /contact. A fresh form should have no field errors. For server-side validation testing, browser required/maxlength constraints may need to be removed temporarily in developer tools, or use the token-and-cookie curl pattern from Step 14. Submit an empty name with a valid message: expect 422, a name error only, and the retained message. Submit a valid name with an oversized message: expect a message error only. With both invalid, each field should show its own error. Correct the values and resubmit with the same token: expect the normal confirmation redirect. Missing or invalid CSRF tokens must still return 403. Repeat the database and dynamic-route checks.
+
+After verifying the intended Step 16 commit on main:
+
+```bash
+git log -1 --oneline
+git tag -a v0.16.0 -m "Step 16: Show accessible field validation errors"
+git push origin v0.16.0
+```

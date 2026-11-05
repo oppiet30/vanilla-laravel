@@ -45,6 +45,7 @@ final class ContactController
                 View::render('contact', [
                     'title' => 'Contact',
                     'csrfToken' => Csrf::token(),
+                    'errors' => $errors,
                     'error' => $required
                         ? 'Name and message are required.'
                         : 'Name must be at most 100 characters and message at most 2000.',
