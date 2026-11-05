@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App;
 
+use App\Http\Middleware;
 use App\Http\Request;
 use App\Http\Response;
 
@@ -11,6 +12,14 @@ final class Router
 {
     /** @var array<string, array<string, callable|array>> */
     private array $routes = [];
+
+    /** @var list<Middleware> */
+    private array $middleware = [];
+
+    public function middleware(Middleware $middleware): void
+    {
+        $this->middleware[] = $middleware;
+    }
 
     public function get(string $path, callable|array $handler): void
     {
@@ -23,6 +32,19 @@ final class Router
     }
 
     public function dispatch(Request $request): Response
+    {
+        $next = fn (Request $request): Response => $this->dispatchRoute($request);
+
+        // The first registered middleware wraps the rest of the pipeline.
+        foreach (array_reverse($this->middleware) as $middleware) {
+            $downstream = $next;
+            $next = static fn (Request $request): Response => $middleware->handle($request, $downstream);
+        }
+
+        return $next($request);
+    }
+
+    private function dispatchRoute(Request $request): Response
     {
         $path = $request->path();
         $match = $this->match($request->method, $path);

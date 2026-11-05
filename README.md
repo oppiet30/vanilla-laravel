@@ -172,3 +172,33 @@ Repeat the prior-route checks. Once verified on main:
 git tag -a v0.11.0 -m "Step 11: Add named dynamic routes"
 git push origin v0.11.0
 ```
+
+## Step 12 — Middleware (v0.12.0)
+
+Middleware wraps request handling. Implement `App\Http\Middleware::handle(Request $request, callable $next): Response`, then register an instance with `$router->middleware(...)` before dispatch. Call `$next($request)` to continue and receive the downstream Response; return a Response directly to stop the chain.
+
+Middleware runs in registration order before the handler and reverse order afterward. The pipeline is rebuilt for each dispatch and also wraps 404/405 responses. This milestone provides global middleware only.
+
+`ContentTypeOptions`, registered in `public/index.php`, adds `X-Content-Type-Options: nosniff` to returned responses while preserving their body, status, and existing headers. It demonstrates modifying the response after the handler. Existing URLs, validation, database reads, and contact behavior stay the same. No dependencies or schema changes are needed.
+
+### Verify Step 12
+
+```bash
+git pull --ff-only origin main
+composer dump-autoload
+php tests/middleware.php
+php -S 10.1.10.138:8181 -t public public/index.php
+curl -i http://10.1.10.138:8181/database/users/1
+curl -i http://10.1.10.138:8181/missing
+curl -i -X POST http://10.1.10.138:8181/database/users/1
+```
+
+Expect 200, 404, and 405 respectively, each with the new header; the 405 must still include `Allow: GET`. Repeat the previous milestone's route checks. The middleware tests run without a database and cover ordering, repeated dispatch, stopping the pipeline, forwarding requests, and response/header preservation.
+
+After verifying the intended Step 12 commit on main:
+
+```bash
+git log -1 --oneline
+git tag -a v0.12.0 -m "Step 12: Add request-response middleware"
+git push origin v0.12.0
+```
