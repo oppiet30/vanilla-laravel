@@ -9,6 +9,7 @@ use App\Http\Response;
 use App\View;
 use App\Csrf;
 use App\Session;
+use App\Validator;
 
 final class ContactController
 {
@@ -28,25 +29,25 @@ final class ContactController
         $name = trim($request->input('name', '') ?? '');
         $message = trim($request->input('message', '') ?? '');
 
-        if ($name === '' || $message === '') {
-            return new Response(
-                View::render('contact', [
-                    'title' => 'Contact',
-                    'csrfToken' => Csrf::token(),
-                    'error' => 'Name and message are required.',
-                    'name' => $name,
-                    'message' => $message,
-                ]),
-                422,
-            );
-        }
+        $errors = Validator::validate(
+            ['name' => $name, 'message' => $message],
+            [
+                'name' => ['required' => true, 'max' => 100],
+                'message' => ['required' => true, 'max' => 2000],
+            ],
+        );
 
-        if (mb_strlen($name) > 100 || mb_strlen($message) > 2000) {
+        if ($errors !== []) {
+            // Preserve the form's existing summary and required-first behavior.
+            $required = isset($errors['name']['required']) || isset($errors['message']['required']);
+
             return new Response(
                 View::render('contact', [
                     'title' => 'Contact',
                     'csrfToken' => Csrf::token(),
-                    'error' => 'Name must be at most 100 characters and message at most 2000.',
+                    'error' => $required
+                        ? 'Name and message are required.'
+                        : 'Name must be at most 100 characters and message at most 2000.',
                     'name' => $name,
                     'message' => $message,
                 ]),

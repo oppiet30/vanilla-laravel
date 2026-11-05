@@ -287,3 +287,42 @@ git log -1 --oneline
 git tag -a v0.14.0 -m "Step 14: Add session-backed CSRF form protection"
 git push origin v0.14.0
 ```
+
+## Step 15 — Reusable validation (v0.15.0)
+
+Validator::validate($data, $rules) now handles text-field rules independently of HTTP, sessions, and views. It returns an empty array on success, or errors keyed by field and rule. Supported rules are required and max (a nonnegative character limit); non-text values receive a string error. Required rejects missing, null, empty, or whitespace-only values, while the text "0" is valid.
+
+```php
+$errors = Validator::validate(
+    ['title' => 'My book'],
+    ['title' => ['required' => true, 'max' => 100]],
+);
+// [] on success; otherwise, for example:
+// ['title' => ['required' => 'This field is required.']]
+```
+
+Callers normalize input (the contact controller still trims strings). Validation does not alter input, escape HTML, write sessions, or choose HTTP responses. Lengths use mb_strlen(), as before; PHP's mbstring extension is required. Unknown fields are ignored unless a rule is provided.
+
+The contact controller now declares its two fields' rules and chooses its existing summary message from the results. Required errors still take priority over length errors. CSRF is checked first (403), invalid fields still return 422 with escaped input and a retry token, and valid submissions still redirect with 303 to the one-time confirmation. No routes, schemas, credentials, or dependencies change.
+
+### Verify Step 15
+
+```bash
+git pull --ff-only origin main
+composer dump-autoload
+php tests/validator.php
+php tests/middleware.php
+php tests/session.php
+php tests/csrf.php
+php -S 10.1.10.138:8181 -t public public/index.php
+```
+
+Reload /contact before testing. Submit valid fields, missing fields, and values at/over the 100-character name and 2000-character message limits. Limits count Unicode characters rather than bytes. With a valid token, missing/oversized fields should produce the same 422 messages as before; missing/incorrect tokens must still produce 403. Repeat the database and dynamic-route checks.
+
+After verifying the intended Step 15 commit on main:
+
+```bash
+git log -1 --oneline
+git tag -a v0.15.0 -m "Step 15: Extract reusable text-field validation"
+git push origin v0.15.0
+```
