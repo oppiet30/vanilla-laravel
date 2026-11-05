@@ -139,3 +139,36 @@ git log -1 --oneline
 git tag -a v0.10.0 -m "Step 10: Extract read-only sample-user model"
 git push origin v0.10.0
 ```
+
+## Step 11 — Dynamic routes (v0.11.0)
+
+Sample names now link to `/database/users/1`. Register a route using a named segment:
+
+```php
+$router->get('/database/users/{id}', [DatabaseController::class, 'show']);
+```
+
+The router calls the handler with the Request followed by an associative parameter array, such as `['id' => '1']`. The controller uses the path ID in preference to a query ID and keeps the same validation and prepared model lookup. The old `/database/user?id=1` route and its GET form remain supported.
+
+Literal routes take precedence for the requested method. Dynamic routes are checked in registration order; each placeholder must occupy a whole segment, have a unique name, and match one nonempty segment. Captured values are URL-decoded once. Trailing slashes and extra segments do not match. Unsupported methods on matching dynamic routes return 405 with Allow. No optional segments, wildcards, or custom constraints are introduced.
+
+### Verify Step 11
+
+```bash
+git pull --ff-only origin main
+composer dump-autoload
+php -S 10.1.10.138:8181 -t public public/index.php
+curl -i http://10.1.10.138:8181/database/users/1          # 200
+curl -i http://10.1.10.138:8181/database/users/999999     # 404 if absent
+curl -i http://10.1.10.138:8181/database/users/invalid    # 422
+curl -i http://10.1.10.138:8181/database/users/1/extra    # 404
+curl -i -X POST http://10.1.10.138:8181/database/users/1 # 405, Allow: GET
+curl -i 'http://10.1.10.138:8181/database/user?id=1'      # 200, old URL
+```
+
+Repeat the prior-route checks. Once verified on main:
+
+```bash
+git tag -a v0.11.0 -m "Step 11: Add named dynamic routes"
+git push origin v0.11.0
+```

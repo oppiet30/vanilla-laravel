@@ -33,9 +33,10 @@ final class DatabaseController
         ]));
     }
 
-    public function show(Request $request): Response
+    /** @param array<string, string> $parameters */
+    public function show(Request $request, array $parameters = []): Response
     {
-        $rawId = $request->query('id');
+        $rawId = $parameters['id'] ?? $request->query('id');
         // demo_users uses an unsigned INT primary key. Reject malformed input
         // before connecting; bind the validated ID rather than building SQL.
         if ($rawId === null || !preg_match('/^[1-9][0-9]{0,9}$/D', $rawId)
