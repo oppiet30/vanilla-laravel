@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Database;
+use App\Models\DemoUser;
 use App\Http\Response;
 use App\Http\Request;
-use PDO;
 use App\View;
 use PDOException;
 use RuntimeException;
@@ -17,9 +16,7 @@ final class DatabaseController
     public function index(): Response
     {
         try {
-            $users = Database::connection()
-                ->query('SELECT id, name FROM demo_users ORDER BY id LIMIT 20')
-                ->fetchAll();
+            $users = DemoUser::all();
         } catch (PDOException | RuntimeException $error) {
             // Never expose credentials, SQL details, or connection messages.
             return new Response(View::render('database', [
@@ -35,6 +32,7 @@ final class DatabaseController
             'unavailable' => false,
         ]));
     }
+
     public function show(Request $request): Response
     {
         $rawId = $request->query('id');
@@ -50,12 +48,7 @@ final class DatabaseController
         }
 
         try {
-            $statement = Database::connection()->prepare(
-                'SELECT id, name FROM demo_users WHERE id = :id'
-            );
-            $statement->bindValue(':id', $rawId, PDO::PARAM_STR);
-            $statement->execute();
-            $user = $statement->fetch();
+            $user = DemoUser::find($rawId);
         } catch (PDOException | RuntimeException $error) {
             return new Response(View::render('database-user', [
                 'title' => 'Sample user',
@@ -66,8 +59,8 @@ final class DatabaseController
 
         return new Response(View::render('database-user', [
             'title' => 'Sample user',
-            'message' => $user === false ? 'Sample user not found.' : null,
-            'user' => $user === false ? null : $user,
-        ]), $user === false ? 404 : 200);
+            'message' => $user === null ? 'Sample user not found.' : null,
+            'user' => $user,
+        ]), $user === null ? 404 : 200);
     }
 }

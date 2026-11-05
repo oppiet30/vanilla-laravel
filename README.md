@@ -114,3 +114,28 @@ git log -1 --oneline
 git tag -a v0.9.0 -m "Step 9: Prepared statements and sample-user lookup"
 git push origin v0.9.0
 ```
+
+## Step 10 — A small model (v0.10.0)
+
+`App\Models\DemoUser` now owns the two read-only queries. `all()` returns up to 20 rows ordered by ID; `find($id)` uses the existing prepared statement and returns one row or null when absent. Database errors still throw, allowing the controller to return the same generic 503.
+
+The request supplies input, the controller validates it and chooses the HTTP response, the model reads database rows, and the view renders escaped HTML. This is a plain PHP model, with no ORM or new dependencies. Existing URLs, schema, SELECT-only account, and contact behavior stay the same.
+
+### Verify Step 10 on Fedora
+
+```bash
+git pull --ff-only origin main
+composer dump-autoload
+find app public routes resources/views -name '*.php' -exec php -l {} \;
+php -S 10.1.10.138:8181 -t public public/index.php
+```
+
+Open http://10.1.10.138:8181/database and click a sample name. Repeat Step 9's lookup checks and Step 8's prior-route checks using port 8181: expect 200 for a known user, 404 for an absent ID, 422 for invalid IDs, and 405 for POST to the lookup. An unavailable database should still produce a generic 503 while the home page works. No schema or credential changes are needed.
+
+After verification, confirm main is at the intended Step 10 commit before tagging:
+
+```bash
+git log -1 --oneline
+git tag -a v0.10.0 -m "Step 10: Extract read-only sample-user model"
+git push origin v0.10.0
+```
