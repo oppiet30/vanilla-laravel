@@ -1,5 +1,6 @@
 <h1>Database demo</h1>
-<p>Step 8 reads up to 20 sample users from MariaDB. This page does not write data.</p>
+<p>Up to 20 sample users from MariaDB, newest first.</p>
+<p><a href="/database/users/create">New user</a></p>
 <?php if ($unavailable): ?>
     <p>Database unavailable. Check your local configuration, PDO mysql driver, and imported schema using the README.</p>
 <?php elseif ($users === []): ?>

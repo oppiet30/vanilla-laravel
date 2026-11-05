@@ -1,4 +1,7 @@
 <h1>Sample user</h1>
+<?php if (!empty($notice)): ?>
+    <p role="status"><?= htmlspecialchars((string) $notice, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+<?php endif; ?>
 <form action="/database/user" method="get">
     <label for="user-id">User ID</label>
     <input id="user-id" name="id" type="number" min="1" max="4294967295" required>

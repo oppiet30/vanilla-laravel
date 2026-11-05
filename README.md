@@ -395,3 +395,37 @@ git log -1 --oneline
 git tag -a v0.17.0 -m "Step 17: Centralize environment configuration"
 git push origin v0.17.0
 ```
+
+## Step 18 — Create sample users (v0.18.0)
+
+Open http://vanilla-laravel.test/database and select **New user**. GET /database/users/create shows a name form; POST /database/users checks CSRF, trims the name, and validates required/max 100 characters. Field errors return 422 with escaped retained input. Missing/incorrect tokens return 403 and link to the correct form.
+
+DemoUser::create() uses a prepared INSERT and returns MariaDB's generated ID. A successful POST returns 303 to /database/users/{id}, which shows a one-time "User created successfully." notice scoped to that record. Refreshing the detail page does not repeat the INSERT or the notice. Duplicate names are allowed by the existing schema. These are sample name records, not login accounts; no passwords or authentication are added.
+
+The database list now displays the newest 20 users first. This supersedes the read-only milestone descriptions above: the new POST writes to demo_users. The configured account needs SELECT and INSERT on that table; no schema change is needed. Database write failures return a generic 503 with the name and token retained for retry. Do not reimport the example schema to upgrade.
+
+### Verify Step 18
+
+```bash
+git pull --ff-only origin main
+composer dump-autoload
+php tests/user-form.php
+php tests/config.php
+php tests/contact-view.php
+php tests/validator.php
+php tests/middleware.php
+php tests/session.php
+php tests/csrf.php
+```
+
+The user-form test never writes to MariaDB; it checks validation, CSRF, routing, escaping, and a simulated connection failure. For the real save flow, open /database/users/create, enter a name, and submit. Expect a redirect to the saved record and its confirmation notice; refresh to verify the notice disappears, then return to /database to see the new user near the top. Check empty/whitespace/over-100-character names (browser constraints may need disabling for server-side tests), invalid tokens, and the existing contact and lookup routes.
+
+Apache serves this app at http://vanilla-laravel.test; there is no need to run php -S. The development-server alternative remains available on port 8181.
+
+After verifying the intended Step 18 commit on main:
+
+```bash
+git log -1 --oneline
+git tag -a v0.18.0 -m "Step 18: Add sample-user creation"
+git push origin v0.18.0
+```
