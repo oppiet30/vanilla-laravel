@@ -7,7 +7,7 @@
 <?php else: ?>
     <ul>
         <?php foreach ($users as $user): ?>
-            <li><?= htmlspecialchars((string) $user['name'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></li>
+            <li><a href="/database/user?id=<?= (int) $user['id'] ?>"><?= htmlspecialchars((string) $user['name'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></a></li>
         <?php endforeach; ?>
     </ul>
 <?php endif; ?>

@@ -82,3 +82,35 @@ git push origin v0.8.0
 ```
 
 The tag is intentionally left for the verified milestone. LICENSE and previous milestone code are preserved.
+
+## Step 9 — Prepared statements (v0.9.0)
+
+Builds on Step 8 without schema or dependency changes. Visit `/database`, click a sample name, or use `/database/user?id=1`. The GET form looks up one sample user. `Request::query()` reads query parameters separately from POST `input()`, so contact behavior stays the same.
+
+The controller validates a canonical positive unsigned INT ID, prepares SQL containing `:id`, binds the value, then executes it. Binding keeps data separate from SQL; validation also gives useful errors. The decimal ID is bound as a string to support the full MariaDB unsigned INT range without a platform integer overflow. This milestone remains read-only and uses the existing SELECT account.
+
+### Verify Step 9 on Fedora
+
+Use the same setup/server commands above. Expect:
+
+```bash
+curl -i 'http://localhost:8000/database/user?id=1'       # 200, Ada Lovelace
+curl -i 'http://localhost:8000/database/user?id=999999'  # 404 if absent
+curl -i 'http://localhost:8000/database/user'            # 422, missing ID
+curl -i 'http://localhost:8000/database/user?id=0'       # 422
+curl -i 'http://localhost:8000/database/user?id[]=1' --globoff # 422
+curl -i 'http://localhost:8000/database/user?id=4294967296' # 422
+curl -i 'http://localhost:8000/database/user?id=1%20OR%201=1' # 422
+curl -i -X POST 'http://localhost:8000/database/user?id=1' # 405
+```
+
+Repeat the Step 8 route checks. With an unavailable database, a valid lookup returns a generic 503; malformed IDs still return 422 before connecting. No schema import or data changes are needed.
+
+After verifying the Step 9 commit on main:
+
+```bash
+git pull --ff-only origin main
+git log -1 --oneline
+git tag -a v0.9.0 -m "Step 9: Prepared statements and sample-user lookup"
+git push origin v0.9.0
+```
