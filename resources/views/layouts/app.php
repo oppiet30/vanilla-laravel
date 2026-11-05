@@ -11,7 +11,8 @@
             <a href="/">Home</a> |
             <a href="/about">About</a> |
             <a href="/users">Users</a> |
-            <a href="/contact">Contact</a>
+            <a href="/contact">Contact</a> |
+            <a href="/database">Database demo</a>
         </nav>
     </header>
     <main>
