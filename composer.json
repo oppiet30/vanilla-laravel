@@ -2,6 +2,7 @@
     "name": "oppiet30/vanilla-laravel",
     "description": "A Laravel-inspired framework built step by step in vanilla PHP.",
     "type": "project",
+    "license": "MIT",
     "require": {
         "php": "^8.2"
     },
