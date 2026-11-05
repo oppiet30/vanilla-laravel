@@ -1,5 +1,5 @@
 <h1>Contact</h1>
-<p>This demonstration does not save or send messages.</p>
+<p>Messages are shown once for confirmation; they are not emailed or added to the database.</p>
 <?php if (!empty($error)): ?>
     <p role="alert"><?= htmlspecialchars((string) $error, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
 <?php endif; ?>

@@ -202,3 +202,46 @@ git log -1 --oneline
 git tag -a v0.12.0 -m "Step 12: Add request-response middleware"
 git push origin v0.12.0
 ```
+
+## Step 13 — Sessions and flash messages (v0.13.0)
+
+Successful contact submissions now follow POST → 303 redirect → GET /contact/success. The name and message are stored temporarily in a server-side PHP session and pulled once for confirmation. Refreshing the confirmation redirects to /contact instead of submitting the POST again. Visiting /contact/success without a pending message also redirects to the form. Invalid submissions still return 422 with escaped form values.
+
+This supersedes earlier instructions expecting a direct 200 on a valid contact POST: expect 303 with Location: /contact/success, then 200 when following the redirect with the same session cookie. Contact messages are not emailed or written to MariaDB, but are held temporarily in PHP's session storage until consumed or cleaned up by PHP. Pending flash values are consumed when read, rather than aged on every unrelated request.
+
+StartSession middleware starts PHP's built-in session, then saves/closes it after the handler to release the session lock. Session::flash() writes a one-time value and Session::pullFlash() reads/removes it. Response::redirect() creates a 303 response for an application-controlled destination.
+
+The session cookie is HttpOnly, SameSite=Lax, and Secure when PHP receives HTTPS directly. On this tutorial's HTTP development server, Secure is off so the cookie works. PHP's session storage directory must be writable. No database changes or new dependencies are needed.
+
+### Verify Step 13
+
+```bash
+git pull --ff-only origin main
+composer dump-autoload
+php tests/middleware.php
+php tests/session.php
+php -S 10.1.10.138:8181 -t public public/index.php
+```
+
+Open /contact, submit a valid message, and confirm the address becomes /contact/success. Refresh: you should return to /contact. Submit empty or oversized values: expect 422 without redirecting. Open /contact/success in a separate private browser session: expect a redirect to /contact, without another session's message. Repeat the database and dynamic-route checks.
+
+For curl, keep cookies across the POST and GET:
+
+```bash
+cookies=$(mktemp)
+curl -i -c "$cookies" -b "$cookies" -d "name=Oppie&message=Hello" http://10.1.10.138:8181/contact
+# 303, Location: /contact/success
+curl -i -c "$cookies" -b "$cookies" http://10.1.10.138:8181/contact/success
+# 200, confirmation
+curl -i -b "$cookies" http://10.1.10.138:8181/contact/success
+# 303, Location: /contact
+rm -f "$cookies"
+```
+
+After verifying the intended Step 13 commit on main:
+
+```bash
+git log -1 --oneline
+git tag -a v0.13.0 -m "Step 13: Add sessions and one-time flash messages"
+git push origin v0.13.0
+```

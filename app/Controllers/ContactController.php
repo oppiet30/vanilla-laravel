@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Http\Request;
 use App\Http\Response;
 use App\View;
+use App\Session;
 
 final class ContactController
 {
@@ -44,10 +45,25 @@ final class ContactController
             );
         }
 
+        Session::flash('contact', ['name' => $name, 'message' => $message]);
+
+        return Response::redirect('/contact/success');
+    }
+
+    public function success(): Response
+    {
+        $contact = Session::pullFlash('contact');
+        if (!is_array($contact)) {
+            return Response::redirect('/contact');
+        }
+
         return new Response(View::render('contact-success', [
             'title' => 'Message received',
-            'name' => $name,
-            'message' => $message,
-        ]));
+            'name' => $contact['name'],
+            'message' => $contact['message'],
+        ]), 200, [
+            'Content-Type' => 'text/html; charset=UTF-8',
+            'Cache-Control' => 'no-store',
+        ]);
     }
 }

@@ -14,6 +14,12 @@ final class Response
     ) {
     }
 
+    /** Use an application-controlled local path as the destination. */
+    public static function redirect(string $path): self
+    {
+        return new self('', 303, ['Location' => $path]);
+    }
+
     public function send(): void
     {
         http_response_code($this->status);
