@@ -17,4 +17,13 @@ require __DIR__ . '/../routes/web.php';
 
 $request = Request::capture();
 $response = $router->dispatch($request);
+
+// Log the path only: query strings and form values stay out of access logs.
+error_log(sprintf(
+    '%s %s -> %d',
+    $request->method,
+    $request->path(),
+    $response->status,
+));
+
 $response->send();
