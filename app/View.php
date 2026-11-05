@@ -33,9 +33,17 @@ final class View
             }
         };
 
+        // A bad local configuration must not take down non-database pages.
+        try {
+            $appName = Config::load()->get('APP_NAME', 'Vanilla Laravel');
+        } catch (RuntimeException) {
+            $appName = 'Vanilla Laravel';
+        }
+
         $content = $render($path, $data);
         return $render(dirname(__DIR__) . '/resources/views/layouts/app.php', [
-            'title' => $data['title'] ?? 'Vanilla Laravel',
+            'title' => $data['title'] ?? $appName,
+            'appName' => $appName,
             'content' => $content,
         ]);
     }

@@ -355,3 +355,43 @@ git log -1 --oneline
 git tag -a v0.16.0 -m "Step 16: Show accessible field validation errors"
 git push origin v0.16.0
 ```
+
+## Step 17 — Central configuration (v0.17.0)
+
+Config now owns environment/file loading, previously embedded in Database. Use Config::load()->get('KEY', 'default') to read a text setting. Precedence is process environment (including an explicit empty string), then the local .env file, then the caller's default. The file uses the same literal PHP INI syntax as before; quoted values can contain spaces and #. It is parsed lazily and cached per Config instance. Non-text INI array values and malformed files produce generic exceptions without including keys, paths, or values.
+
+Database uses Config for its existing DB_* settings and still validates the host, port, database, and username before connecting. Credentials remain local, and the SELECT-only database flow is unchanged. A missing .env file is allowed when settings come from process variables.
+
+APP_NAME is the first application setting. It defaults to Vanilla Laravel and appears, HTML-escaped, above the navigation. Add this line to your local .env to try it:
+
+```ini
+APP_NAME="My Learning App"
+```
+
+Reload any page to see the name above the links. Remove the setting to restore the default. The configured name is also the fallback page title; explicit page titles stay the same. If the app-name configuration cannot be read, views use the default name so non-database routes remain available. Database configuration failures still produce generic 503 responses.
+
+Only .env.example is tracked; no real settings file, credentials, config dump endpoint, or dependency is added. The constructor also accepts a file path for isolated tests, while Config::load() always targets this application's root .env.
+
+### Verify Step 17
+
+```bash
+git pull --ff-only origin main
+composer dump-autoload
+php tests/config.php
+php tests/contact-view.php
+php tests/validator.php
+php tests/middleware.php
+php tests/session.php
+php tests/csrf.php
+php -S 10.1.10.138:8181 -t public public/index.php
+```
+
+Try APP_NAME locally, then repeat the contact submission, field-error, CSRF, flash, database-list, and dynamic-lookup checks. Process overrides must be set in the server's environment before starting it. The database must remain lazy: normal pages work without a reachable database.
+
+After verifying the intended Step 17 commit on main:
+
+```bash
+git log -1 --oneline
+git tag -a v0.17.0 -m "Step 17: Centralize environment configuration"
+git push origin v0.17.0
+```
