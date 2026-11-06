@@ -42,8 +42,7 @@ final class DatabaseController
         $rawId = $parameters['id'] ?? $request->query('id');
         // demo_users uses an unsigned INT primary key. Reject malformed input
         // before connecting; bind the validated ID rather than building SQL.
-        if ($rawId === null || !preg_match('/^[1-9][0-9]{0,9}$/D', $rawId)
-            || (float) $rawId > 4294967295) {
+        if (!$this->validId($rawId)) {
             return new Response(View::render('database-user', [
                 'title' => 'Sample user',
                 'message' => 'Enter a positive user ID from 1 to 4294967295.',
@@ -61,11 +60,14 @@ final class DatabaseController
             ]), 503);
         }
 
+        $created = $user === null ? null : Session::pullFlash('user_created:' . $rawId);
+        $updated = $user === null ? null : Session::pullFlash('user_updated:' . $rawId);
+
         return new Response(View::render('database-user', [
             'title' => 'Sample user',
             'message' => $user === null ? 'Sample user not found.' : null,
             'user' => $user,
-            'notice' => $user === null ? null : Session::pullFlash('user_created:' . $rawId),
+            'notice' => $updated ?? $created,
         ]), $user === null ? 404 : 200);
     }
 
@@ -114,5 +116,98 @@ final class DatabaseController
         Session::flash('user_created:' . $id, 'User created successfully.');
 
         return Response::redirect('/database/users/' . $id);
+    }
+
+    /** @param array<string, string> $parameters */
+    public function edit(Request $request, array $parameters): Response
+    {
+        $id = $parameters['id'] ?? null;
+        if (!$this->validId($id)) {
+            return $this->userError('Enter a positive user ID from 1 to 4294967295.', 422);
+        }
+
+        try {
+            $user = DemoUser::find($id);
+        } catch (PDOException | RuntimeException $error) {
+            return $this->userError('Database unavailable. Check your local setup.', 503);
+        }
+        if ($user === null) {
+            return $this->userError('Sample user not found.', 404);
+        }
+
+        return $this->editForm($id, $user['name']);
+    }
+
+    /** @param array<string, string> $parameters */
+    public function update(Request $request, array $parameters): Response
+    {
+        $id = $parameters['id'] ?? null;
+        if (!Csrf::validate($request->input('_token'))) {
+            return new Response(View::render('csrf-error', [
+                'title' => 'Form verification failed',
+                'retryUrl' => $this->validId($id) ? '/database/users/' . $id . '/edit' : '/database',
+            ]), 403);
+        }
+        if (!$this->validId($id)) {
+            return $this->userError('Enter a positive user ID from 1 to 4294967295.', 422);
+        }
+
+        $name = trim($request->input('name', '') ?? '');
+        try {
+            $user = DemoUser::find($id);
+        } catch (PDOException | RuntimeException $error) {
+            return $this->editForm($id, $name, [], 'Unable to save the user. Check your database setup and try again.', 503);
+        }
+        if ($user === null) {
+            return $this->userError('Sample user not found.', 404);
+        }
+
+        $errors = Validator::validate(
+            ['name' => $name],
+            ['name' => ['required' => true, 'max' => 100]],
+        );
+        if ($errors !== []) {
+            return $this->editForm($id, $name, $errors, null, 422);
+        }
+
+        try {
+            if (!DemoUser::update($id, $name)) {
+                return $this->userError('Sample user not found.', 404);
+            }
+        } catch (PDOException | RuntimeException $error) {
+            return $this->editForm($id, $name, [], 'Unable to save the user. Check your database setup and try again.', 503);
+        }
+
+        Session::flash('user_updated:' . $id, 'User updated successfully.');
+
+        return Response::redirect('/database/users/' . $id);
+    }
+
+    private function validId(?string $id): bool
+    {
+        return $id !== null && preg_match('/^[1-9][0-9]{0,9}$/D', $id) === 1
+            && (float) $id <= 4294967295;
+    }
+
+    private function userError(string $message, int $status): Response
+    {
+        return new Response(View::render('database-user', [
+            'title' => 'Sample user',
+            'message' => $message,
+            'user' => null,
+        ]), $status);
+    }
+
+    /** @param array<string, array<string, string>> $errors */
+    private function editForm(string $id, string $name, array $errors = [], ?string $error = null, int $status = 200): Response
+    {
+        return new Response(View::render('database-user-edit', [
+            'title' => 'Edit sample user',
+            'id' => $id,
+            'name' => $name,
+            'errors' => $errors,
+            'error' => $error,
+            'csrfToken' => Csrf::token(),
+        ]), $status);
     }
 }

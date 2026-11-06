@@ -19,3 +19,6 @@ $router->get('/contact/success', [ContactController::class, 'success']);
 
 $router->get('/database/users/create', [DatabaseController::class, 'create']);
 $router->post('/database/users', [DatabaseController::class, 'store']);
+
+$router->get('/database/users/{id}/edit', [DatabaseController::class, 'edit']);
+$router->post('/database/users/{id}', [DatabaseController::class, 'update']);

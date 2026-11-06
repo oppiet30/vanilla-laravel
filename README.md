@@ -429,3 +429,36 @@ git log -1 --oneline
 git tag -a v0.18.0 -m "Step 18: Add sample-user creation"
 git push origin v0.18.0
 ```
+
+## Step 19 — Edit sample users (v0.19.0)
+
+Open a sample user's detail page and select **Edit user**. GET /database/users/{id}/edit prefills the name; POST /database/users/{id} checks CSRF, confirms the record exists, trims/validates the name, and calls DemoUser::update() with a prepared UPDATE.
+
+Successful updates return 303 to the same detail page with a one-time, record-scoped "User updated successfully." notice. Saving an unchanged name also succeeds: a zero changed-row count does not necessarily mean the record is missing. A missing/deleted record returns 404, malformed IDs return 422, invalid names return 422 with accessible field errors and escaped input, and invalid CSRF tokens return 403. Connection/write failures return generic 503 responses; failed updates retain the submitted name for retry. Cancel returns to the detail page without changing data.
+
+This adds POST support to /database/users/{id}; earlier examples expecting 405 for that POST are superseded. Other unsupported methods still return 405. Names remain limited to 100 Unicode characters. The database account needs SELECT and UPDATE for editing (and INSERT for creation), which is already configured on Dell. No schema, credentials, authentication, or dependencies change.
+
+### Verify Step 19
+
+```bash
+git pull --ff-only origin main
+composer dump-autoload
+php tests/user-edit-form.php
+php tests/user-form.php
+php tests/config.php
+php tests/contact-view.php
+php tests/validator.php
+php tests/middleware.php
+php tests/session.php
+php tests/csrf.php
+```
+
+These form tests do not write to MariaDB. At http://vanilla-laravel.test/database, create a sample user, open its detail page, and select Edit user. Change the name, save, and confirm the detail/list reflect it. Refresh: the notice should disappear. Save the same name again: expect success. Try missing/whitespace/oversized names with a valid token (browser constraints may need disabling for server-side tests), incorrect tokens, and an absent ID. Existing creation, contact, and lookup flows should still work. Keep using Apache; php -S is not needed.
+
+After verifying the intended Step 19 commit on main:
+
+```bash
+git log -1 --oneline
+git tag -a v0.19.0 -m "Step 19: Add sample-user editing"
+git push origin v0.19.0
+```

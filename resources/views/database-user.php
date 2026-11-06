@@ -13,4 +13,7 @@
     <p>ID: <?= (int) $user['id'] ?></p>
     <p>Name: <?= htmlspecialchars((string) $user['name'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
 <?php endif; ?>
+<?php if ($user !== null): ?>
+    <p><a href="/database/users/<?= (int) $user['id'] ?>/edit">Edit user</a></p>
+<?php endif; ?>
 <p><a href="/database">Back to sample users</a></p>

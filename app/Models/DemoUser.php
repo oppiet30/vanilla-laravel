@@ -52,4 +52,18 @@ final class DemoUser
 
         return $id;
     }
+
+    /** Return false only when the ID no longer exists, including unchanged names. */
+    public static function update(string $id, string $name): bool
+    {
+        $statement = Database::connection()->prepare(
+            'UPDATE demo_users SET name = :name WHERE id = :id'
+        );
+        $statement->bindValue(':name', $name, PDO::PARAM_STR);
+        $statement->bindValue(':id', $id, PDO::PARAM_STR);
+        $statement->execute();
+
+        // MariaDB can report zero changed rows when the name is unchanged.
+        return $statement->rowCount() > 0 || self::find($id) !== null;
+    }
 }
