@@ -115,8 +115,15 @@ final class DatabaseController
         }
 
         try {
+            if (DemoUser::nameExists($name)) {
+                return $this->duplicateName($name);
+            }
             $id = DemoUser::create($name);
         } catch (PDOException | RuntimeException $error) {
+            // The unique index also catches two simultaneous submissions.
+            if ($error instanceof PDOException && (int) ($error->errorInfo[1] ?? 0) === 1062) {
+                return $this->duplicateName($name);
+            }
             return new Response(View::render('database-user-create', [
                 'title' => 'New sample user',
                 'csrfToken' => Csrf::token(),
@@ -183,10 +190,16 @@ final class DatabaseController
         }
 
         try {
+            if (DemoUser::nameExists($name, $id)) {
+                return $this->duplicateName($name, $id);
+            }
             if (!DemoUser::update($id, $name)) {
                 return $this->userError('Sample user not found.', 404);
             }
         } catch (PDOException | RuntimeException $error) {
+            if ($error instanceof PDOException && (int) ($error->errorInfo[1] ?? 0) === 1062) {
+                return $this->duplicateName($name, $id);
+            }
             return $this->editForm($id, $name, [], 'Unable to save the user. Check your database setup and try again.', 503);
         }
 
@@ -247,6 +260,21 @@ final class DatabaseController
         Session::flash('user_deleted', 'User deleted successfully.');
 
         return Response::redirect('/database');
+    }
+
+    private function duplicateName(string $name, ?string $id = null): Response
+    {
+        $errors = ['name' => ['unique' => 'A user with this name already exists.']];
+        if ($id !== null) {
+            return $this->editForm($id, $name, $errors, null, 422);
+        }
+
+        return new Response(View::render('database-user-create', [
+            'title' => 'New sample user',
+            'csrfToken' => Csrf::token(),
+            'name' => $name,
+            'errors' => $errors,
+        ]), 422);
     }
 
     private function validId(?string $id): bool

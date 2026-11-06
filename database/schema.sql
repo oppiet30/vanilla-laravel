@@ -2,7 +2,8 @@
 -- No DROP, credentials, or changes to existing application tables.
 CREATE TABLE IF NOT EXISTS demo_users (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL
+    name VARCHAR(100) NOT NULL,
+    CONSTRAINT demo_users_name_unique UNIQUE (name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Stable IDs keep repeated imports from duplicating the sample rows.

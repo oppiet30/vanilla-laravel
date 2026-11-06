@@ -537,3 +537,23 @@ git log -1 --oneline
 git tag -a v0.21.0 -m "Step 21: Paginate sample users"
 git push origin v0.21.0
 ```
+
+## Correction — Unique sample-user names
+
+Creation and editing now reject a name already used by another record, returning 422 with a field error and retained input. Saving a record's own unchanged name is allowed. Names are trimmed first and compared using the table's existing collation (the sample schema uses case-insensitive utf8mb4_unicode_ci). This supersedes Step 18's statement allowing duplicate names.
+
+The form pre-check provides the field error. A unique database constraint closes the simultaneous-submission race; MariaDB duplicate-key errors are translated into the same field error, without exposing SQL details. New installations include the constraint in database/schema.sql.
+
+Existing installations: first rename or delete existing duplicate records yourself. Inspect them in an administrator session:
+
+```sql
+SELECT name, COUNT(*) FROM demo_users GROUP BY name HAVING COUNT(*) > 1;
+```
+
+When this query returns no rows, apply database/migrations/001_unique_demo_user_names.sql once using an account with ALTER permission. The migration adds an index; it does not rename or delete records. Do not reimport the starter schema to upgrade. Until the index is installed, the form pre-check blocks ordinary duplicates, but simultaneous requests still require the database constraint.
+
+```bash
+VANILLA_TEST_DB=1 phpunit
+```
+
+The transactional tests check exact/case/trimmed duplicates, edit conflicts, and unchanged saves. The database-constraint test is skipped until the migration is installed. Existing records are preserved.

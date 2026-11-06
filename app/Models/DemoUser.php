@@ -57,6 +57,22 @@ final class DemoUser
         return $user === false ? null : $user;
     }
 
+    public static function nameExists(string $name, ?string $exceptId = null): bool
+    {
+        $sql = 'SELECT 1 FROM demo_users WHERE name = :name';
+        if ($exceptId !== null) {
+            $sql .= ' AND id <> :id';
+        }
+        $statement = Database::connection()->prepare($sql . ' LIMIT 1');
+        $statement->bindValue(':name', $name, PDO::PARAM_STR);
+        if ($exceptId !== null) {
+            $statement->bindValue(':id', $exceptId, PDO::PARAM_STR);
+        }
+        $statement->execute();
+
+        return $statement->fetchColumn() !== false;
+    }
+
     /** The controller supplies a trimmed, validated name. */
     public static function create(string $name): string
     {
