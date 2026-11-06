@@ -22,3 +22,6 @@ $router->post('/database/users', [DatabaseController::class, 'store']);
 
 $router->get('/database/users/{id}/edit', [DatabaseController::class, 'edit']);
 $router->post('/database/users/{id}', [DatabaseController::class, 'update']);
+
+$router->get('/database/users/{id}/delete', [DatabaseController::class, 'confirmDelete']);
+$router->post('/database/users/{id}/delete', [DatabaseController::class, 'destroy']);

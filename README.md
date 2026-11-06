@@ -462,3 +462,52 @@ git log -1 --oneline
 git tag -a v0.19.0 -m "Step 19: Add sample-user editing"
 git push origin v0.19.0
 ```
+
+## Step 20 — Delete sample users and PHPUnit (v0.20.0)
+
+Open a sample user's detail page and select **Delete user**. GET /database/users/{id}/delete shows the escaped name, an explicit confirmation button, and Cancel. Visiting that page or selecting Cancel never deletes a record. POST to the same URL validates CSRF and the path ID, then calls DemoUser::delete() with a prepared DELETE scoped to that ID.
+
+A successful deletion returns 303 to /database with a one-time "User deleted successfully." notice. Missing/already-deleted records return 404, malformed IDs return 422, invalid/missing tokens return 403, and database failures return generic 503 responses. A submitted body ID cannot override the path ID. Existing creation, editing, contact, and lookup flows remain supported. The account needs DELETE as well as the previously used privileges; Dell is already configured. No schema or credentials change.
+
+### System-wide PHPUnit 13
+
+PHPUnit is installed system-wide on Dell, so no PHPUnit Composer dependency is added. phpunit.xml uses the existing Composer autoloader and discovers *Test.php in tests/phpunit. The earlier plain PHP tests remain available for gradual migration.
+
+```bash
+git pull --ff-only origin main
+composer dump-autoload
+phpunit
+```
+
+The default suite does not connect to MariaDB: database-free tests use a closed database port, and the integration test is skipped unless explicitly enabled. Session tests use isolated processes and temporary session directories; see [PHPUnit test isolation](https://docs.phpunit.de/en/13.4/attributes.html#test-isolation).
+
+To run all PHPUnit tests with MariaDB:
+
+```bash
+VANILLA_TEST_DB=1 phpunit
+```
+
+The opt-in test verifies InnoDB first, creates its own records inside a transaction, checks confirmation/CSRF/deletion/404 handling and the one-time notice, then always rolls back. It does not delete existing user records. Auto-increment sequences can still advance during rolled-back tests.
+
+Also run the existing regression scripts:
+
+```bash
+php tests/user-edit-form.php
+php tests/user-form.php
+php tests/config.php
+php tests/contact-view.php
+php tests/validator.php
+php tests/middleware.php
+php tests/session.php
+php tests/csrf.php
+```
+
+For a browser check at http://vanilla-laravel.test/database, create a disposable sample user, open Delete user, and select Cancel first to confirm the record remains. Reopen the confirmation and select Yes, delete user. Expect the list and a one-time notice; refreshing should remove the notice. The deleted detail URL should return 404. Deletion is permanent, so use a disposable record for this check.
+
+After verifying the intended Step 20 commit on main:
+
+```bash
+git log -1 --oneline
+git tag -a v0.20.0 -m "Step 20: Add confirmed user deletion and PHPUnit tests"
+git push origin v0.20.0
+```

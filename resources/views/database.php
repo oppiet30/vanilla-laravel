@@ -1,4 +1,7 @@
 <h1>Database demo</h1>
+<?php if (!empty($notice)): ?>
+    <p role="status"><?= htmlspecialchars((string) $notice, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+<?php endif; ?>
 <p>Up to 20 sample users from MariaDB, newest first.</p>
 <p><a href="/database/users/create">New user</a></p>
 <?php if ($unavailable): ?>

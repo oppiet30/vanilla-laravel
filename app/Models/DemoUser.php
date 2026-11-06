@@ -66,4 +66,14 @@ final class DemoUser
         // MariaDB can report zero changed rows when the name is unchanged.
         return $statement->rowCount() > 0 || self::find($id) !== null;
     }
+
+    /** Delete exactly the requested record; false means it was already absent. */
+    public static function delete(string $id): bool
+    {
+        $statement = Database::connection()->prepare('DELETE FROM demo_users WHERE id = :id');
+        $statement->bindValue(':id', $id, PDO::PARAM_STR);
+        $statement->execute();
+
+        return $statement->rowCount() === 1;
+    }
 }

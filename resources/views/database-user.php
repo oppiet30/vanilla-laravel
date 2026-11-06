@@ -15,5 +15,6 @@
 <?php endif; ?>
 <?php if ($user !== null): ?>
     <p><a href="/database/users/<?= (int) $user['id'] ?>/edit">Edit user</a></p>
+    <p><a href="/database/users/<?= (int) $user['id'] ?>/delete">Delete user</a></p>
 <?php endif; ?>
 <p><a href="/database">Back to sample users</a></p>
