@@ -22,6 +22,25 @@ final class DemoUser
     }
 
     /**
+     * @return array{users: list<array{id: int|string, name: string}>, page: int, lastPage: int, total: int}
+     */
+    public static function paginate(int $page): array
+    {
+        $connection = Database::connection();
+        $total = (int) $connection->query('SELECT COUNT(*) FROM demo_users')->fetchColumn();
+        $lastPage = max(1, (int) ceil($total / 20));
+        $page = min(max(1, $page), $lastPage);
+        $statement = $connection->prepare(
+            'SELECT id, name FROM demo_users ORDER BY id DESC LIMIT :limit OFFSET :offset'
+        );
+        $statement->bindValue(':limit', 20, PDO::PARAM_INT);
+        $statement->bindValue(':offset', ($page - 1) * 20, PDO::PARAM_INT);
+        $statement->execute();
+
+        return ['users' => $statement->fetchAll(), 'page' => $page, 'lastPage' => $lastPage, 'total' => $total];
+    }
+
+    /**
      * The controller supplies a validated unsigned INT ID as a decimal string.
      * @return array{id: int|string, name: string}|null
      */

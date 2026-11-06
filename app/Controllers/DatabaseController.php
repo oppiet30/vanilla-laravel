@@ -16,10 +16,20 @@ use RuntimeException;
 
 final class DatabaseController
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $rawPage = $request->hasQuery('page') ? $request->query('page') : '1';
+        if ($rawPage === null || !preg_match('/^[1-9][0-9]{0,8}$/D', $rawPage)) {
+            return new Response(View::render('database', [
+                'title' => 'Database demo',
+                'users' => [],
+                'unavailable' => false,
+                'error' => 'Enter a positive page number from 1 to 999999999.',
+            ]), 422);
+        }
+
         try {
-            $users = DemoUser::all();
+            $pagination = DemoUser::paginate((int) $rawPage);
         } catch (PDOException | RuntimeException $error) {
             // Never expose credentials, SQL details, or connection messages.
             return new Response(View::render('database', [
@@ -31,7 +41,8 @@ final class DatabaseController
 
         return new Response(View::render('database', [
             'title' => 'Database demo',
-            'users' => $users,
+            'users' => $pagination['users'],
+            'pagination' => $pagination,
             'unavailable' => false,
             'notice' => Session::pullFlash('user_deleted'),
         ]));

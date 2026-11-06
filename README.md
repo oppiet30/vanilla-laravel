@@ -511,3 +511,29 @@ git log -1 --oneline
 git tag -a v0.20.0 -m "Step 20: Add confirmed user deletion and PHPUnit tests"
 git push origin v0.20.0
 ```
+
+## Step 21 — Paginated user list (v0.21.0)
+
+The database list now shows 20 users per page, newest first, with a total count and Previous/Next navigation. /database and /database?page=1 show the first page; /database?page=2 shows the next. DemoUser::paginate() counts rows and uses integer-bound LIMIT/OFFSET parameters. Existing detail URLs and create/edit/delete/contact flows stay the same.
+
+Page values must be canonical positive integers from 1 through 999999999. Missing page defaults to 1; empty, array-shaped, negative, nonnumeric, and oversized values return 422 before accessing MariaDB. Request::hasQuery() distinguishes missing parameters from malformed non-text values. A valid number beyond the last page shows the current last page rather than an empty list. An empty table shows Page 1 of 1 with no Previous/Next links.
+
+### Verify Step 21
+
+```bash
+git pull --ff-only origin main
+phpunit
+VANILLA_TEST_DB=1 phpunit
+```
+
+The default PHPUnit tests do not connect to MariaDB. The opt-in pagination test checks InnoDB, creates 25 temporary records inside a transaction, checks ordering/page boundaries/navigation, then rolls back without changing existing records. Auto-increment values may advance despite rollback.
+
+At http://vanilla-laravel.test/database, check the total and page indicator. Previous/Next appear only when applicable; you need more than 20 records for Next. You do not need to add records manually to verify it: the integration test covers multiple pages. Try /database?page=0 (422) and /database?page=999999999 (last page). Existing plain PHP regression scripts remain supported. No schema, credentials, or dependencies change.
+
+After verifying the intended Step 21 commit on main:
+
+```bash
+git log -1 --oneline
+git tag -a v0.21.0 -m "Step 21: Paginate sample users"
+git push origin v0.21.0
+```

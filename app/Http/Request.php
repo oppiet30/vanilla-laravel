@@ -33,14 +33,26 @@ final class Request
     /** Read a query-string value separately from POST form input. */
     public function query(string $key, ?string $default = null): ?string
     {
+        $value = $this->queryValues()[$key] ?? null;
+
+        return is_string($value) ? $value : $default;
+    }
+
+    public function hasQuery(string $key): bool
+    {
+        return array_key_exists($key, $this->queryValues());
+    }
+
+    /** @return array<string, mixed> */
+    private function queryValues(): array
+    {
         $query = parse_url($this->uri, PHP_URL_QUERY);
         $values = [];
         if (is_string($query)) {
             parse_str($query, $values);
         }
-        $value = $values[$key] ?? null;
 
-        return is_string($value) ? $value : $default;
+        return $values;
     }
 
     public function input(string $key, ?string $default = null): ?string
